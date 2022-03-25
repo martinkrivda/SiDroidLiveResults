@@ -23,7 +23,7 @@ $resultsList = getDirContents($_path, 'txt');
 					$data = file_get_contents($_path . DIRECTORY_SEPARATOR . $file['basename']);
 					$resultsInfo = unserialize($data);
 					
-					echo "<td>" . $resultsInfo['date'] . "</td><td><a href='./results/".$resultsInfo['id']. ".html'>" . $resultsInfo['name'] . "</a></td><td>" . $resultsInfo['lastUpdate'] . "</td>";
+					echo "<tr><td>" . $resultsInfo['date'] . "</td><td><a href='./results/".$resultsInfo['id']. ".html'>" . $resultsInfo['name'] . "</a></td><td>" . $resultsInfo['lastUpdate'] . "</td></tr>";
 					
 					
 				}

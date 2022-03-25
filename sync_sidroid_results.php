@@ -1,12 +1,12 @@
 <?php
 # PHP script load .html files in upload directory and move them to results directory with special syntax. Also backup historical files.
-$_path    = '.\upload';
-$_resultPath    = '.\results';
+$_path    = './upload';
+$_resultPath    = './results';
 
 // Move results to live directory and create data file
 $filesForProcessing = getDirContents($_path);
 foreach ($filesForProcessing as $key => $file) {
-	if (filesize($_path . DIRECTORY_SEPARATOR . $file['basename']) > 20000) {
+	if (filesize($_path . DIRECTORY_SEPARATOR . $file['basename']) > 2000000) {
 		echo "Error: File is too large!";
 		rename($_path . DIRECTORY_SEPARATOR . $file['basename'], $_path . DIRECTORY_SEPARATOR . 'error' . DIRECTORY_SEPARATOR . $file['basename']);
 		continue;
@@ -34,6 +34,7 @@ foreach ($filesForProcessing as $key => $file) {
 	file_put_contents($_path . DIRECTORY_SEPARATOR . $competitionId.'.txt', serialize($competitionInfo), FILE_APPEND | LOCK_EX);
 	rename($_path . DIRECTORY_SEPARATOR . $file['basename'], $_resultPath . DIRECTORY_SEPARATOR . $competitionId . '.' . $file['extension']);
 	rename($_path . DIRECTORY_SEPARATOR . $competitionId.'.txt', $_resultPath . DIRECTORY_SEPARATOR . $competitionId . '.txt');
+	chmod($_resultPath . DIRECTORY_SEPARATOR . $competitionId . '.' . $file['extension'], 0775);
 	echo $competitionName;		
 	
 }

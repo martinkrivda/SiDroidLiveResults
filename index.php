@@ -44,6 +44,31 @@ $resultsList = getDirContents($_path, 'txt');
 				</table>
 			 </div>
 		</div>
+		
+		<script type="text/javascript">
+			function searchFunction() {
+			  // Declare variables
+			  var input, filter, table, tr, td, i, txtValue;
+			  input = document.getElementById("searchField");
+			  filter = input.value.toUpperCase();
+			  table = document.getElementById("competitionsTable");
+			  tr = table.getElementsByTagName("tr");
+
+			  // Loop through all table rows, and hide those who don't match the search query
+			  for (i = 0; i < tr.length; i++) {
+				td = tr[i].getElementsByTagName("td")[1];
+				if (td) {
+				  txtValue = td.textContent || td.innerText;
+				  if (txtValue.toUpperCase().indexOf(filter) > -1) {
+					tr[i].style.display = "";
+				  } else {
+					tr[i].style.display = "none";
+				  }
+				}
+			  }
+			}
+		</script>
+
     </body>
 </html>
 
@@ -69,27 +94,3 @@ function getDirContents($dir, $fileType = 'html', &$results = array()) {
     return $results;
 }
 ?>
-
-<script type="text/javascript">
-function searchFunction() {
-  // Declare variables
-  var input, filter, table, tr, td, i, txtValue;
-  input = document.getElementById("searchField");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("competitionsTable");
-  tr = table.getElementsByTagName("tr");
-
-  // Loop through all table rows, and hide those who don't match the search query
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[1];
-    if (td) {
-      txtValue = td.textContent || td.innerText;
-      if (txtValue.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
-      }
-    }
-  }
-}
-</script>

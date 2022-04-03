@@ -23,9 +23,11 @@ $resultsList = getDirContents($_path, 'txt');
 				<input type="text" id="searchField" onkeyup="searchFunction()" placeholder="Hledej podle názvu události .." class="input-reset ba b--black-20 pa2 mb4 db w-100 mw8" />
 				<table class="f6 w-100 mw8" cellspacing="0" id="competitionsTable">
 					<thead>
-						<th class="fw6 bb b--black-20 tl pb3 pr3 bg-white">Datum</th>
-						<th class="fw6 bb b--black-20 tl pb3 pr3 bg-white">Název</th>
-						<th class="fw6 bb b--black-20 tl pb3 pr3 bg-white">Poslední aktualizace</th>
+						<tr>
+							<th class="fw6 bb b--black-20 tl pb3 pr3 bg-white">Datum</th>
+							<th class="fw6 bb b--black-20 tl pb3 pr3 bg-white">Název</th>
+							<th class="fw6 bb b--black-20 tl pb3 pr3 bg-white">Poslední aktualizace</th>
+						</tr>
 					</thead>
 					<tbody class="lh-copy">
 						<?php

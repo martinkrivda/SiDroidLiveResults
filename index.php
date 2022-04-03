@@ -5,7 +5,7 @@ $resultsList = getDirContents($_path, 'txt');
 ?>
 
 <!DOCTYPE HTML>
-<html>
+<html lang="cs">
     <head>
 		<title>SI-Droid Results</title>
 		<meta charset="UTF-8">

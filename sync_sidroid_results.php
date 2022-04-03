@@ -1,7 +1,9 @@
 <?php
 # PHP script load .html files in upload directory and move them to results directory with special syntax. Also backup historical files.
+header( 'Cache-Control: max-age=0,no-store');
 $_path    = './upload';
-$_resultPath    = './results';
+$_resultPath    = './files';
+$splitsVersion = array('Mezičasy', 'Splits');
 
 // Move results to live directory and create data file
 $filesForProcessing = getDirContents($_path);
@@ -17,12 +19,15 @@ foreach ($filesForProcessing as $key => $file) {
 	libxml_use_internal_errors(false);
 	$headings1 = $dom->getElementsByTagName('h1');
 	$headings2 = $dom->getElementsByTagName('h2');
-	$competitionName = explode(',', $headings1[0]->nodeValue)[0];
-	$competitionId = date('Y_m_d_', strtotime($headings2[0]->nodeValue)) . str_replace(' ', '_', $competitionName);
+	$competitionName = explode(',', $headings1[0]->nodeValue);
+	$splits = in_array($competitionName[1], $splitsVersion) ? true : false;
+	$competitionName = $competitionName[0];
+	$competitionId = date('Y_m_d_', strtotime($headings2[0]->nodeValue)) . str_replace(' ', '_', sanitize(htmlspecialchars($competitionName)));
 	$competitionInfo = array(
 		'id' => $competitionId,
 		'name' => $competitionName,
 		'date' => date('Y-m-d', strtotime($headings2[0]->nodeValue)),
+		'splits' => $splits,
 		'lastUpdate' => date('Y-m-d H:i:s'),
 	);
 	$head = $dom->getElementsByTagName('head')->item(0);
@@ -71,6 +76,21 @@ function getDirContents($dir, $fileType = 'html', &$results = array()) {
     }
 
     return $results;
+}
+
+function sanitize($string, $force_lowercase = true, $anal = false, $trunc = 100) {
+	$strip = array("~", "`", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "=", "+", "[", "{", "]",
+				   "}", "\\", "|", ";", ":", "\"", "'", "&#8216;", "&#8217;", "&#8220;", "&#8221;", "&#8211;", "&#8212;",
+				   "—", "–", ",", "<", ".", ">", "/", "?");
+	$clean = trim(str_replace($strip, "", strip_tags($string)));
+	$clean = preg_replace('/\s+/', "-", $clean);
+	$clean = ($anal ? preg_replace("/[^a-zA-Z0-9]/", "", $clean) : $clean);
+	$clean = ($trunc ? substr($clean, 0, $trunc) : $clean);
+	return ($force_lowercase) ?
+		(function_exists('mb_strtolower')) ?
+			mb_strtolower($clean, 'UTF-8') :
+			strtolower($clean) :
+		$clean;
 }
 
 ?>

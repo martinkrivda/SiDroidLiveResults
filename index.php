@@ -35,7 +35,7 @@ $resultsList = getDirContents($_path, 'txt');
 							$data = file_get_contents($_path . DIRECTORY_SEPARATOR . $file['basename']);
 							$resultsInfo = unserialize($data);
 							
-							echo "<tr><td class='pv3 pr3 bb b--black-20'>" . $resultsInfo['date'] . "</td><td class='pv3 pr3 bb b--black-20'><a href='./". $_path ."/".$resultsInfo['id']. ".html'>" . htmlspecialchars($resultsInfo['name']) . "</a></td><td class='pv3 pr3 bb b--black-20'>" . htmlspecialchars($resultsInfo['lastUpdate']) . "</td></tr>";
+							echo "<tr><td class='pv3 pr3 bb b--black-20'>" . $resultsInfo['date'] . "</td><td class='pv3 pr3 bb b--black-20'><a href='./". $_path ."/".$resultsInfo['id']. "." . $resultsInfo['extension'] . "'>" . htmlspecialchars($resultsInfo['name']) . "</a></td><td class='pv3 pr3 bb b--black-20'>" . htmlspecialchars($resultsInfo['lastUpdate']) . "</td></tr>";
 							
 							
 						}

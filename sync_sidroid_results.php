@@ -3,10 +3,11 @@
 header( 'Cache-Control: max-age=0,no-store');
 $_path    = './upload';
 $_resultPath    = './files';
+$_fileType = array('html', 'htm');
 $splitsVersion = array('Mezičasy', 'Splits');
 
 // Move results to live directory and create data file
-$filesForProcessing = getDirContents($_path);
+$filesForProcessing = getDirContents($_path, $_fileType);
 foreach ($filesForProcessing as $key => $file) {
 	if (filesize($_path . DIRECTORY_SEPARATOR . $file['basename']) > 2000000) {
 		echo "Error: File is too large!";
@@ -28,6 +29,7 @@ foreach ($filesForProcessing as $key => $file) {
 		'name' => $competitionName,
 		'date' => date('Y-m-d', strtotime($headings2[0]->nodeValue)),
 		'splits' => $splits,
+		'extension' => $file['extension'],
 		'lastUpdate' => date('Y-m-d H:i:s'),
 	);
 	$head = $dom->getElementsByTagName('head')->item(0);
@@ -44,12 +46,12 @@ foreach ($filesForProcessing as $key => $file) {
 	
 }
 // Backup 1 day old results
-$liveResultsList = getDirContents($_resultPath, 'txt');
+$liveResultsList = getDirContents($_resultPath, array('txt'));
 foreach ($liveResultsList as $key => $file) {
 	$data = file_get_contents($_resultPath . DIRECTORY_SEPARATOR . $file['basename']);
 	$resultsInfo = unserialize($data);
 	if (strtotime($resultsInfo['lastUpdate']) + 86400 < time()) {
-		rename($_resultPath . DIRECTORY_SEPARATOR . $resultsInfo['id'] . '.html', $_resultPath . DIRECTORY_SEPARATOR . 'backup' . DIRECTORY_SEPARATOR . date('Y', strtotime($resultsInfo['lastUpdate'])) . DIRECTORY_SEPARATOR . $resultsInfo['id'] . '.html');
+		rename($_resultPath . DIRECTORY_SEPARATOR . $resultsInfo['id'] . '.' . $resultsInfo['extension'], $_resultPath . DIRECTORY_SEPARATOR . 'backup' . DIRECTORY_SEPARATOR . date('Y', strtotime($resultsInfo['lastUpdate'])) . DIRECTORY_SEPARATOR . $resultsInfo['id'] . '.' . $resultsInfo['extension']);
 		rename($_resultPath . DIRECTORY_SEPARATOR . $resultsInfo['id'] . '.txt', $_resultPath . DIRECTORY_SEPARATOR . 'backup' . DIRECTORY_SEPARATOR . date('Y', strtotime($resultsInfo['lastUpdate'])) . DIRECTORY_SEPARATOR . $resultsInfo['id'] . '.txt');
 		echo "Move to backup";
 	}
@@ -57,14 +59,14 @@ foreach ($liveResultsList as $key => $file) {
 
 
 
-function getDirContents($dir, $fileType = 'html', &$results = array()) {
+function getDirContents($dir, $fileType = array('html'), &$results = array()) {
     $files = scandir($dir);
     $index = 1;
 	foreach ($files as $key => $value) {
         $path = realpath($dir . DIRECTORY_SEPARATOR . $value);
         if (!is_dir($path)) {
 			$file_parts = pathinfo($path);
-			if ($file_parts["extension"] === $fileType) {
+			if (in_array($file_parts["extension"], $fileType, true)) {
 				$results[] = array('path' => $path,
 								   'filename' => $file_parts["filename"],
 								   'basename' => $file_parts["basename"],

@@ -35,7 +35,7 @@ foreach ($filesForProcessing as $key => $file) {
 	$head = $dom->getElementsByTagName('head')->item(0);
 	$refresh = $dom->createElement('meta');
 	$refresh->setAttribute('http-equiv','refresh');
-	$refresh->setAttribute('content','10;url=');
+	$refresh->setAttribute('content','60;url=');
 	$head->appendChild($refresh);
 	file_put_contents($_path . DIRECTORY_SEPARATOR . $file['basename'], $dom->saveHTML(), LOCK_EX);
 	file_put_contents($_path . DIRECTORY_SEPARATOR . $competitionId.'.txt', serialize($competitionInfo), FILE_APPEND | LOCK_EX);

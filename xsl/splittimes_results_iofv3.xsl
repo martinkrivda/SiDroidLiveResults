@@ -22,8 +22,6 @@
         
         <!-- Pruchod po kategoriích -->
         <xsl:for-each select="ResultList/ClassResult">
-        <xsl:variable name = "numberOfControlsInCategory" select = "count(PersonResult/Result/SplitTime)"/>
-        Počet kontrol <xsl:value-of select="$numberOfControlsInCategory"/>
           <section>
             <p class="cat-title">
               <span class="category"><xsl:value-of select="Class/Name"/></span>
@@ -183,7 +181,7 @@
                     </xsl:if>
                   </td>
                   
-                  <!-- Časy na postupech -->                  
+                  <!-- Celkový čas na postupech -->                  
                   <xsl:for-each select="Result/SplitTime">
                     <td class='leg'>
                       <xsl:variable name="seconds" select="Time"/>
@@ -200,6 +198,7 @@
                     </td>
                   </xsl:for-each>
                   
+                  
                   <!-- Cílový čas -->
                   <td class='finish'>
                     <xsl:variable name="seconds" select="Result/Time"/>
@@ -213,16 +212,57 @@
                       </xsl:otherwise>
                     </xsl:choose>
                     <xsl:value-of select="format-number($seconds mod 60, ':00')"/>
+                  </td>                  
+                </tr>
+                
+                <!-- Časy na postupech -->                  
+                <tr>
+                  <!-- Přeskočit první 4 sloupce  -->
+                  <td></td>
+                  <td class='personid'>
+                    <xsl:value-of select="Person/Id"/>
                   </td>
+                  <td class='empty'></td>
+                  <td class='empty'></td>
+                  <td class='empty'></td>
                   
+                  <!-- Čas postupu -->
+                  <xsl:variable name="splittimes" select="Result/SplitTime/Time"/>
+                  <xsl:variable name="finishtime" select="Result/Time"/>
+                  <xsl:for-each select="Result/SplitTime">
+                    <xsl:variable name="current_splittime" select="Time"/>
+                    <xsl:variable name="current_pos" select="position()"/>
+
+                    <!-- První postup -->
+                    <xsl:if test="$current_pos = 1">
+                      <td class='split'>
+                        <xsl:value-of select="$current_splittime" />
+                      </td>
+                    </xsl:if>
+                    
+                    <!-- Mezipostupy -->
+                    <xsl:if test="$current_pos &lt;= last() and $current_pos &gt; 1">
+                      <td class='split'>
+                        <xsl:value-of select="$current_splittime - $splittimes[position() = $current_pos - 1]" />
+                      </td>
+                    </xsl:if>
+                    
+                    <!-- Čas od sběrky do cíle -->
+                    <xsl:if test="$current_pos != 1 and $current_pos &gt;= last()">
+                      <td class='split'>
+                        <xsl:value-of select="$finishtime - $splittimes[last()]" />
+                      </td>
+                    </xsl:if>
+                    
+                  </xsl:for-each>
                 </tr>
               </xsl:for-each>
             </table>
           </section>
         </xsl:for-each>
         
-        <xsl:apply-templates select="ResultList"/> 
-
+        <xsl:apply-templates select="ResultList"/>
+               
       </body>
     </html>
   </xsl:template>

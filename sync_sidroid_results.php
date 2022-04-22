@@ -33,10 +33,34 @@ foreach ($filesForProcessing as $key => $file) {
 		'lastUpdate' => date('Y-m-d H:i:s'),
 	);
 	$head = $dom->getElementsByTagName('head')->item(0);
-	$refresh = $dom->createElement('meta');
-	$refresh->setAttribute('http-equiv','refresh');
-	$refresh->setAttribute('content','60;url=');
-	$head->appendChild($refresh);
+	$metaElementList = $dom->getElementsByTagName('meta');
+	$refreshNode = false;
+	foreach ($metaElementList as $element) {
+		if($element->getAttribute('http-equiv') === 'refresh') {
+			$refreshNode = true;
+		}
+	}
+	if(!$refreshNode) {
+		$refresh = $dom->createElement('meta');
+		$refresh->setAttribute('http-equiv','refresh');
+		$refresh->setAttribute('content','60;url=');
+		$head->appendChild($refresh);
+	}
+	$cacheControl = $dom->createElement('meta');
+	$cacheControl->setAttribute('http-equiv','Cache-Control');
+	$cacheControl->setAttribute('content','no-cache, no-store, must-revalidate');
+	$head->appendChild($cacheControl);
+	
+	$pragma = $dom->createElement('meta');
+	$pragma->setAttribute('http-equiv','Pragma');
+	$pragma->setAttribute('content','no-cache');
+	$head->appendChild($pragma);
+	
+	$expires = $dom->createElement('meta');
+	$expires->setAttribute('http-equiv','Expires');
+	$expires->setAttribute('content','0');
+	$head->appendChild($expires);
+	
 	file_put_contents($_path . DIRECTORY_SEPARATOR . $file['basename'], $dom->saveHTML(), LOCK_EX);
 	file_put_contents($_path . DIRECTORY_SEPARATOR . $competitionId.'.txt', serialize($competitionInfo), FILE_APPEND | LOCK_EX);
 	rename($_path . DIRECTORY_SEPARATOR . $file['basename'], $_resultPath . DIRECTORY_SEPARATOR . $competitionId . '.' . $file['extension']);

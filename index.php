@@ -8,12 +8,12 @@ $resultsList = getDirContents($_path, 'txt');
 <html lang="cs">
     <head>
 		<title>SI-Droid Results</title>
-		<meta charset="UTF-8">
-		<meta name="description" content="SI-Droid live results page.">
-		<meta name="keywords" content="SI, droid, results, výsledky, online, live, ob, orienteering, ol">
-		<meta name="author" content="Martin Křivda">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta http-equiv="refresh" content="60">
+		<meta charset="UTF-8" />
+		<meta name="description" content="SI-Droid live results page." />
+		<meta name="keywords" content="SI, droid, results, výsledky, online, live, ob, orienteering, ol" />
+		<meta name="author" content="Martin Křivda" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="refresh" content="60" />
 		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 		<meta http-equiv="Pragma" content="no-cache" />
 		<meta http-equiv="Expires" content="0" />

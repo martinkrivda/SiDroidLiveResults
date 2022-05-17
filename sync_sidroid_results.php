@@ -3,8 +3,18 @@
 header( 'Cache-Control: max-age=0,no-store');
 $_path    = './upload';
 $_resultPath    = './files';
-$_fileType = array('html', 'htm');
+$_fileType = array('html', 'htm', 'xml');
 $splitsVersion = array('Mezičasy', 'Splits');
+
+class MySimpleXMLElement extends SimpleXMLElement
+{
+    public function addProcessingInstruction($target, $data = NULL) {
+        $node   = dom_import_simplexml($this);
+        $pi     = $node->ownerDocument->createProcessingInstruction($target, $data);
+        $result = $node->appendChild($pi);
+        return $this;
+    }
+}
 
 // Move results to live directory and create data file
 $filesForProcessing = getDirContents($_path, $_fileType);
@@ -14,54 +24,69 @@ foreach ($filesForProcessing as $key => $file) {
 		rename($_path . DIRECTORY_SEPARATOR . $file['basename'], $_path . DIRECTORY_SEPARATOR . 'error' . DIRECTORY_SEPARATOR . $file['basename']);
 		continue;
 	}
-	$dom = new DOMDocument();
-	libxml_use_internal_errors(true);
-	$dom->loadHTML(file_get_contents($_path . DIRECTORY_SEPARATOR . $file['basename']));
-	libxml_use_internal_errors(false);
-	$headings1 = $dom->getElementsByTagName('h1');
-	$headings2 = $dom->getElementsByTagName('h2');
-	$competitionName = explode(',', $headings1[0]->nodeValue);
-	$splits = in_array($competitionName[1], $splitsVersion) ? true : false;
-	$competitionName = $competitionName[0];
-	$competitionId = date('Y_m_d_', strtotime($headings2[0]->nodeValue)) . str_replace(' ', '_', sanitize(htmlspecialchars($competitionName)));
-	$competitionInfo = array(
-		'id' => $competitionId,
-		'name' => $competitionName,
-		'date' => date('Y-m-d', strtotime($headings2[0]->nodeValue)),
-		'splits' => $splits,
-		'extension' => $file['extension'],
-		'lastUpdate' => date('Y-m-d H:i:s'),
-	);
-	$head = $dom->getElementsByTagName('head')->item(0);
-	$metaElementList = $dom->getElementsByTagName('meta');
-	$refreshNode = false;
-	foreach ($metaElementList as $element) {
-		if($element->getAttribute('http-equiv') === 'refresh') {
-			$refreshNode = true;
+	if($file['extension'] === 'html' || $file['extension'] === 'htm') {
+		$dom = new DOMDocument();
+		libxml_use_internal_errors(true);
+		$dom->loadHTML(file_get_contents($_path . DIRECTORY_SEPARATOR . $file['basename']));
+		libxml_use_internal_errors(false);
+		$headings1 = $dom->getElementsByTagName('h1');
+		$headings2 = $dom->getElementsByTagName('h2');
+		$competitionName = explode(',', $headings1[0]->nodeValue);
+		$splits = in_array($competitionName[1], $splitsVersion) ? true : false;
+		$competitionName = $competitionName[0];
+		$competitionId = date('Y_m_d_', strtotime($headings2[0]->nodeValue)) . str_replace(' ', '_', sanitize(htmlspecialchars($competitionName)));
+		$competitionInfo = array(
+			'id' => $competitionId,
+			'name' => $competitionName,
+			'date' => date('Y-m-d', strtotime($headings2[0]->nodeValue)),
+			'splits' => $splits,
+			'extension' => $file['extension'],
+			'lastUpdate' => date('Y-m-d H:i:s'),
+		);
+		$head = $dom->getElementsByTagName('head')->item(0);
+		$metaElementList = $dom->getElementsByTagName('meta');
+		$refreshNode = false;
+		foreach ($metaElementList as $element) {
+			if($element->getAttribute('http-equiv') === 'refresh') {
+				$refreshNode = true;
+			}
 		}
+		if(!$refreshNode) {
+			$refresh = $dom->createElement('meta');
+			$refresh->setAttribute('http-equiv','refresh');
+			$refresh->setAttribute('content','60;url=');
+			$head->appendChild($refresh);
+		}
+		$cacheControl = $dom->createElement('meta');
+		$cacheControl->setAttribute('http-equiv','Cache-Control');
+		$cacheControl->setAttribute('content','no-cache, no-store, must-revalidate');
+		$head->appendChild($cacheControl);
+		
+		$pragma = $dom->createElement('meta');
+		$pragma->setAttribute('http-equiv','Pragma');
+		$pragma->setAttribute('content','no-cache');
+		$head->appendChild($pragma);
+		
+		$expires = $dom->createElement('meta');
+		$expires->setAttribute('http-equiv','Expires');
+		$expires->setAttribute('content','0');
+		$head->appendChild($expires);
+		file_put_contents($_path . DIRECTORY_SEPARATOR . $file['basename'], $dom->saveHTML(), LOCK_EX);
+	} else if($file['extension'] === 'xml') {
+		$xml = simplexml_load_string(file_get_contents($_path . DIRECTORY_SEPARATOR . $file['basename']), 'MySimpleXMLElement');
+		$competitionName = (string) $xml->Event->Name;
+		$competitionDate = (string) $xml->Event->StartTime->Date;
+		$competitionId = date('Y_m_d_', strtotime($competitionDate)) . str_replace(' ', '_', sanitize(htmlspecialchars($competitionName)));
+		$competitionInfo = array(
+			'id' => $competitionId,
+			'name' => $competitionName,
+			'date' => date('Y_m_d', strtotime($competitionDate)),
+			'extension' => $file['extension'],
+			'lastUpdate' => date('Y-m-d H:i:s'),
+		);
+		$xml->addProcessingInstruction('xml-stylesheet', 'type="text/xsl" href="../xsl/simple_results_iofv3.xsl"');
+		file_put_contents($_path . DIRECTORY_SEPARATOR . $file['basename'], $xml->saveXML(), LOCK_EX);
 	}
-	if(!$refreshNode) {
-		$refresh = $dom->createElement('meta');
-		$refresh->setAttribute('http-equiv','refresh');
-		$refresh->setAttribute('content','60;url=');
-		$head->appendChild($refresh);
-	}
-	$cacheControl = $dom->createElement('meta');
-	$cacheControl->setAttribute('http-equiv','Cache-Control');
-	$cacheControl->setAttribute('content','no-cache, no-store, must-revalidate');
-	$head->appendChild($cacheControl);
-	
-	$pragma = $dom->createElement('meta');
-	$pragma->setAttribute('http-equiv','Pragma');
-	$pragma->setAttribute('content','no-cache');
-	$head->appendChild($pragma);
-	
-	$expires = $dom->createElement('meta');
-	$expires->setAttribute('http-equiv','Expires');
-	$expires->setAttribute('content','0');
-	$head->appendChild($expires);
-	
-	file_put_contents($_path . DIRECTORY_SEPARATOR . $file['basename'], $dom->saveHTML(), LOCK_EX);
 	file_put_contents($_path . DIRECTORY_SEPARATOR . $competitionId.'.txt', serialize($competitionInfo), FILE_APPEND | LOCK_EX);
 	rename($_path . DIRECTORY_SEPARATOR . $file['basename'], $_resultPath . DIRECTORY_SEPARATOR . $competitionId . '.' . $file['extension']);
 	rename($_path . DIRECTORY_SEPARATOR . $competitionId.'.txt', $_resultPath . DIRECTORY_SEPARATOR . $competitionId . '.txt');

@@ -80,7 +80,7 @@ foreach ($filesForProcessing as $key => $file) {
 		$competitionInfo = array(
 			'id' => $competitionId,
 			'name' => $competitionName,
-			'date' => date('Y_m_d', strtotime($competitionDate)),
+			'date' => date('Y-m-d', strtotime($competitionDate)),
 			'extension' => $file['extension'],
 			'lastUpdate' => date('Y-m-d H:i:s'),
 		);

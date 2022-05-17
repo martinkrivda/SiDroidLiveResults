@@ -18,12 +18,10 @@
           
           <!-- Datum závodu -->
           <h2><xsl:value-of select="ResultList/Event/StartTime/Date"/></h2>
-        </header>
+        </header>        
         
         <!-- Pruchod po kategoriích -->
         <xsl:for-each select="ResultList/ClassResult">
-        <xsl:variable name = "numberOfControlsInCategory" select = "count(PersonResult/Result/SplitTime)"/>
-        Počet kontrol <xsl:value-of select="$numberOfControlsInCategory"/>
           <section>
             <p class="cat-title">
               <span class="category"><xsl:value-of select="Class/Name"/></span>
@@ -54,13 +52,62 @@
             
             <!-- Pruchod po závodnících -->            
             <table>
+              
+              <xsl:variable name="runner_positions" select="PersonResult/Result/Position"/>
               <xsl:for-each select="PersonResult">
-                <tr>
+
+                <!-- Hlavičky sloupců -->
+                <!-- Nadpisy -->
+                <xsl:if test="position() = 1 ">
+                  <tr class='split-header'>
+                    <td class='pos'>Um.</td>
+                    <td class='name'>Jméno</td>
+                    <!-- <td class='club'>Klub</td> -->
+                    <td class='time'>Čas</td>
+                    <td class='loss'>Ztráta</td>
+                    <xsl:for-each select="Result/SplitTime">
+                      <td class='control-name'>celk. mezi.</td>
+                    </xsl:for-each>
+                    <td class='control-name'>celk. mezi.</td>
+                    <td class='name'>Jméno</td>
+                  </tr>
+
+                  <!-- Pořadová čísla a kódy -->
+                  <tr class='split-header'>
+                    <td class='empty'></td>
+                    <td class='club'>Klub</td>
+                    <!-- <td class='empty'></td> -->
+                    <td class='empty'></td>
+                    <td class='empty'></td>
+                    <xsl:for-each select="Result/SplitTime">
+                      <td class='control-code'>
+                      <xsl:value-of select="position()"/> (<xsl:value-of select="ControlCode"/>)
+                      </td>
+                    </xsl:for-each>
+                    <td class='control-code'>Cíl</td>
+                    <td class='personid'>Reg. číslo</td>
+                  </tr>
+                </xsl:if>
+
+                <tr class='split'>    
+                  
                   <!-- Umístění -->
+                  <xsl:variable name="current_position" select="position()"/>
                   <td class='pos'>
                     <xsl:choose>
                       <xsl:when test="Result/Position">
-                        <xsl:value-of select="Result/Position"/>
+                        <!-- Pořešení totožného pořadí -->
+                        <xsl:choose>
+                          <xsl:when test="position() = 1">
+                            <xsl:value-of select="Result/Position"/>
+                          </xsl:when>
+                          <xsl:when test="position() > 1 and $runner_positions[$current_position -1] = $runner_positions[$current_position]">
+                            <xsl:text>=</xsl:text>
+                          </xsl:when>
+                          <xsl:otherwise>
+                            <xsl:value-of select="Result/Position"/>
+                          </xsl:otherwise>
+                        </xsl:choose>
                       </xsl:when>
                       <xsl:otherwise>
                         <xsl:text>-</xsl:text>
@@ -73,28 +120,8 @@
                     <xsl:value-of select="Person/Name/Given"/>
                     <xsl:text> </xsl:text>
                     <xsl:value-of select="Person/Name/Family"/>
-                  </td>
-                  
-                  <!-- Klub závodníka -->
-                  <td class='club'>
-                    <xsl:choose>
-                      <!-- SI Droid -->
-                      <xsl:when test="Organisation/Name">
-                        <xsl:value-of select="Organisation/Name"/>
-                      </xsl:when>
-                      
-                      <!-- Quick Event -->
-                      <xsl:when test="Organisation/ShortName">
-                        <xsl:value-of select="Organisation/ShortName"/>
-                      </xsl:when>
-                      
-                      <!-- Zbytek -->
-                      <xsl:otherwise>
-                        <xsl:text>-</xsl:text>
-                      </xsl:otherwise>
-                    </xsl:choose>
-                  </td>
-                  
+                  </td>             
+
                   <!-- Čas závodníka -->
                   <!--
                        <xs:enumeration value="OK"/>
@@ -183,10 +210,42 @@
                     </xsl:if>
                   </td>
                   
-                  <!-- Časy na postupech -->                  
+                  <!-- Celkový čas na postupech -->                  
                   <xsl:for-each select="Result/SplitTime">
-                    <td class='leg'>
-                      <xsl:variable name="seconds" select="Time"/>
+                    
+                    <!-- Ražení ok -->
+                    <xsl:if test="not(./@status)">
+                      <td class='split'>
+                        <xsl:variable name="seconds" select="Time"/>
+                        <xsl:choose>
+                          <xsl:when test="floor($seconds div 3600) &gt; 0">
+                            <xsl:value-of select="format-number(floor($seconds div 3600), '0')"/>
+                            <xsl:value-of select="format-number(floor($seconds div 60) mod 60, ':00')"/>
+                          </xsl:when>
+                          <xsl:otherwise>
+                            <xsl:value-of select="format-number(floor($seconds div 60) mod 60, '00')"/>
+                          </xsl:otherwise>
+                        </xsl:choose>
+                        <xsl:value-of select="format-number($seconds mod 60, ':00')"/>
+                      </td>
+                    </xsl:if>
+                    
+                    <!-- Chybí ražení -->
+                    <xsl:if test="./@status or ./@status = 'Missing'">
+                      <td class='split'>
+                        <xsl:text>---</xsl:text>
+                      </td>
+                    </xsl:if>
+                    
+                  </xsl:for-each>
+                  
+                  
+                  <!-- Cílový čas -->
+                  
+                  <!-- Ražení ok -->
+                  <xsl:variable name="seconds" select="Result/Time"/>
+                  <xsl:if test="Result/Status = 'OK'">
+                    <td class='finish'>
                       <xsl:choose>
                         <xsl:when test="floor($seconds div 3600) &gt; 0">
                           <xsl:value-of select="format-number(floor($seconds div 3600), '0')"/>
@@ -198,21 +257,152 @@
                       </xsl:choose>
                       <xsl:value-of select="format-number($seconds mod 60, ':00')"/>
                     </td>
-                  </xsl:for-each>
+                  </xsl:if>
                   
-                  <!-- Cílový čas -->
-                  <td class='finish'>
-                    <xsl:variable name="seconds" select="Result/Time"/>
+                  <!-- Chybí ražení -->
+                  <xsl:if test="Result/Status != 'OK'">
+                    <td class='finish'>
+                      <xsl:text>---</xsl:text>
+                    </td>
+                  </xsl:if>
+                  
+                  <!-- Jméno závodníka i na konec -->
+                  <td class='name'>
+                    <xsl:value-of select="Person/Name/Given"/>
+                    <xsl:text> </xsl:text>
+                    <xsl:value-of select="Person/Name/Family"/>
+                  </td>            
+                </tr>
+                
+                <!-- Časy na postupech -->                  
+                <tr class='leg'>
+                  <td class='empty'></td>
+                  <!-- Klub závodníka -->
+                  <td class='club'>
                     <xsl:choose>
-                      <xsl:when test="floor($seconds div 3600) &gt; 0">
-                        <xsl:value-of select="format-number(floor($seconds div 3600), '0')"/>
-                        <xsl:value-of select="format-number(floor($seconds div 60) mod 60, ':00')"/>
+                      <!-- Jméno -->
+                      <xsl:when test="Organisation/Name">
+                        <xsl:value-of select="Organisation/Name"/>
                       </xsl:when>
+                      
+                      <!-- Případně zkratka -->
                       <xsl:otherwise>
-                        <xsl:value-of select="format-number(floor($seconds div 60) mod 60, '00')"/>
+                        <xsl:value-of select="Organisation/ShortName"/>
                       </xsl:otherwise>
                     </xsl:choose>
-                    <xsl:value-of select="format-number($seconds mod 60, ':00')"/>
+                  </td>
+                  <td class='empty'></td>
+                  <td class='empty'></td>
+                  
+                  <!-- Čas postupu -->
+                  <!-- <xsl:variable name="splittimes" select="Result/SplitTime/Time"/> -->
+                  <xsl:variable name="splittimes" select="Result/SplitTime"/>
+                  <xsl:variable name="finishtime" select="Result/Time"/>
+                  <xsl:variable name="competitorStatus" select="Result/Status"/>
+                  <xsl:for-each select="Result/SplitTime">
+                    <xsl:variable name="current_splittime" select="Time"/>
+                    <xsl:variable name="current_pos" select="position()"/>
+                    
+                    <!-- První postup -->
+                    <xsl:if test="$current_pos = 1">
+                      
+                      <!-- Ražení ok -->
+                      <xsl:if test="$current_splittime and $current_splittime != 0">
+                        <td class='leg'>
+                          <!-- <xsl:value-of select="$current_splittime" /> -->
+                          <xsl:choose>
+                            <xsl:when test="floor($current_splittime div 3600) &gt; 0">
+                              <xsl:value-of select="format-number(floor($current_splittime div 3600), '0')"/>
+                              <xsl:value-of select="format-number(floor($current_splittime div 60) mod 60, ':00')"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                              <xsl:value-of select="format-number(floor($current_splittime div 60) mod 60, '00')"/>
+                            </xsl:otherwise>
+                          </xsl:choose>
+                          <xsl:value-of select="format-number($current_splittime mod 60, ':00')"/>
+                        </td>
+                      </xsl:if>
+                      
+                      <!-- Chybí ražení -->
+                      <xsl:if test="./@status='Missing'">
+                        <td class='leg'>
+                          <xsl:text>---</xsl:text>
+                        </td>
+                      </xsl:if>
+                    </xsl:if>
+                    
+                    <!-- Mezipostupy -->
+                    <xsl:if test="$current_pos &lt;= last() and $current_pos &gt; 1">
+                      <xsl:if test="$current_splittime and $current_splittime != 0">
+                        
+                        <!-- Ražení ok -->
+                        <xsl:if test="$splittimes[position() = $current_pos - 1]/Time and $splittimes[position() = $current_pos - 1]/Time != 0">
+                          <td class='leg'>
+                            <xsl:variable name="leg" select="$current_splittime - $splittimes[position() = $current_pos - 1]/Time"/>
+                            <xsl:choose>
+                              <xsl:when test="floor($leg div 3600) &gt; 0">
+                                <xsl:value-of select="format-number(floor($leg div 3600), '0')"/>
+                                <xsl:value-of select="format-number(floor($leg div 60) mod 60, ':00')"/>
+                              </xsl:when>
+                              <xsl:otherwise>
+                                <xsl:value-of select="format-number(floor($leg div 60) mod 60, '00')"/>
+                              </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:value-of select="format-number($leg mod 60, ':00')"/>
+                          </td>
+                        </xsl:if>
+                        
+                        <!-- Chybí předchozí mezičas, nelze dopočítat -->
+                        <xsl:if test="not($splittimes[position() = $current_pos - 1]/Time) or $splittimes[position() = $current_pos - 1]/Time = 0">
+                          <td class='leg'>
+                            <xsl:text>---</xsl:text>
+                          </td>
+                        </xsl:if>
+                      </xsl:if>
+                      
+                      <!-- Chybí ražení -->
+                      <xsl:if test="./@status='Missing'">
+                        <td class='leg'>
+                          <xsl:text>---</xsl:text>
+                        </td>
+                      </xsl:if>
+                      
+                    </xsl:if>
+                    
+                    <!-- Čas od sběrky do cíle -->
+                    <xsl:if test="$current_pos != 1 and $current_pos &gt;= last()">
+                      
+                      <!-- Ražení ok = cajk celkový status -->
+                      <xsl:if test="$competitorStatus = 'OK' and $finishtime">
+                        <td class='leg'>
+                          <xsl:variable name="leg" select="$finishtime - $splittimes[last()]/Time"/>
+                          <!-- <xsl:value-of select="$finishtime - $splittimes[last()]/Time" /> -->
+                          <xsl:choose>
+                            <xsl:when test="floor($leg div 3600) &gt; 0">
+                              <xsl:value-of select="format-number(floor($leg div 3600), '0')"/>
+                              <xsl:value-of select="format-number(floor($leg div 60) mod 60, ':00')"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                              <xsl:value-of select="format-number(floor($leg div 60) mod 60, '00')"/>
+                            </xsl:otherwise>
+                          </xsl:choose>
+                          <xsl:value-of select="format-number($leg mod 60, ':00')"/>
+                        </td>
+                      </xsl:if>
+                      
+                      <!-- Chybí ražení -->
+                      <xsl:if test="$competitorStatus != 'OK'">
+                        <td class='leg'>
+                          <xsl:text>---</xsl:text>
+                        </td>
+                      </xsl:if>
+                      
+                    </xsl:if>                    
+                  </xsl:for-each>
+                  
+                  <!-- Registračka i na závěr -->
+                  <td class='personid'>
+                    <xsl:value-of select="Person/Id"/>
                   </td>
                   
                 </tr>
@@ -221,8 +411,8 @@
           </section>
         </xsl:for-each>
         
-        <xsl:apply-templates select="ResultList"/> 
-
+        <xsl:apply-templates select="ResultList"/>
+        
       </body>
     </html>
   </xsl:template>
@@ -250,7 +440,7 @@
           </xsl:when>
           
           <xsl:otherwise>
-            (atribute Creator not defined)    
+            unknown creator(attribute not defined)    
           </xsl:otherwise>
         </xsl:choose>
       </p>

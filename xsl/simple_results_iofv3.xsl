@@ -5,7 +5,7 @@
 		<html>
 			<head>
 				<meta charset="UTF-8"/>
-				<meta name="description" content="Orienteering live results page."/>
+				<meta name="description" content="Orienteering live results."/>
 				<meta name="keywords" content="SI, droid, results, výsledky, online, live, ob, orienteering, ol"/>
 				<meta name="author" content="Lukáš Kettner"/>
 				<meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>

@@ -11,7 +11,7 @@ class MySimpleXMLElement extends SimpleXMLElement
     public function addProcessingInstruction($target, $data = NULL) {
         $node   = dom_import_simplexml($this);
         $pi     = $node->ownerDocument->createProcessingInstruction($target, $data);
-        $result = $node->appendChild($pi);
+        $result = $node->insertBefore($pi, $node->childNodes->item(0));
         return $this;
     }
 }
@@ -73,9 +73,15 @@ foreach ($filesForProcessing as $key => $file) {
 		$head->appendChild($expires);
 		file_put_contents($_path . DIRECTORY_SEPARATOR . $file['basename'], $dom->saveHTML(), LOCK_EX);
 	} else if($file['extension'] === 'xml') {
-		$xml = simplexml_load_string(file_get_contents($_path . DIRECTORY_SEPARATOR . $file['basename']), 'MySimpleXMLElement');
+ 		$xml = simplexml_load_string(file_get_contents($_path . DIRECTORY_SEPARATOR . $file['basename']), 'MySimpleXMLElement');
 		$competitionName = (string) $xml->Event->Name;
 		$competitionDate = (string) $xml->Event->StartTime->Date;
+		// Read the XML file into a string
+		$xmlString = file_get_contents($_path . DIRECTORY_SEPARATOR . $file['basename']);
+		$xmlHeader = preg_split('#\r?\n#', ltrim($xmlString), 2)[0];
+		$xmlContent = preg_split('#\r?\n#', ltrim($xmlString), 2)[1];
+		// Add the XML stylesheet header at the beginning of the string
+		$xmlString = $xmlHeader . "\n<?xml-stylesheet type='text/xsl' href='../xsl/simple_results_iofv3.xsl'?>\n" . $xmlContent; 
 		$competitionId = date('Y_m_d_', strtotime($competitionDate)) . str_replace(' ', '_', sanitize(htmlspecialchars($competitionName)));
 		$competitionInfo = array(
 			'id' => $competitionId,
@@ -84,8 +90,8 @@ foreach ($filesForProcessing as $key => $file) {
 			'extension' => $file['extension'],
 			'lastUpdate' => date('Y-m-d H:i:s'),
 		);
-		$xml->addProcessingInstruction('xml-stylesheet', 'type="text/xsl" href="../xsl/simple_results_iofv3.xsl"');
-		file_put_contents($_path . DIRECTORY_SEPARATOR . $file['basename'], $xml->saveXML(), LOCK_EX);
+		// Write the modified string back to the XML file
+		file_put_contents($_path . DIRECTORY_SEPARATOR . $file['basename'], $xmlString, LOCK_EX);
 	}
 	file_put_contents($_path . DIRECTORY_SEPARATOR . $competitionId.'.txt', serialize($competitionInfo), FILE_APPEND | LOCK_EX);
 	rename($_path . DIRECTORY_SEPARATOR . $file['basename'], $_resultPath . DIRECTORY_SEPARATOR . $competitionId . '.' . $file['extension']);
